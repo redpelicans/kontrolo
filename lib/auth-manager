@@ -1,0 +1,128 @@
+'use strict';
+
+var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.Auth = Auth;
+exports.AuthManager = AuthManager;
+
+var _lodash = require('lodash');
+
+var _lodash2 = _interopRequireDefault(_lodash);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function Auth() {
+  for (var _len = arguments.length, elt = Array(_len), _key = 0; _key < _len; _key++) {
+    elt[_key] = arguments[_key];
+  }
+
+  return new (Function.prototype.bind.apply(AuthKlass, [null].concat(elt)))();
+}
+
+function AuthManager(auths, name) {
+  return new AuthManagerKlass(auths, name);
+}
+
+var AuthKlass = (function () {
+  function AuthKlass() {
+    var _ref = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+
+    var name = _ref.name;
+    var required = _ref.required;
+    var _ref$roles = _ref.roles;
+    var roles = _ref$roles === undefined ? [] : _ref$roles;
+    var method = _ref.method;
+
+    _classCallCheck(this, AuthKlass);
+
+    this.name = name;
+    this.required = required;
+    this.method = method;
+    this.roles = _lodash2.default.isArray(roles) ? roles : [roles];
+  }
+
+  _createClass(AuthKlass, [{
+    key: 'isAuthRequired',
+    value: function isAuthRequired() {
+      return this.roles && this.roles.length || this.method || this.required;
+    }
+  }]);
+
+  return AuthKlass;
+})();
+
+var AuthManagerKlass = (function () {
+  function AuthManagerKlass() {
+    var _this = this;
+
+    var auths = arguments.length <= 0 || arguments[0] === undefined ? [] : arguments[0];
+    var name = arguments[1];
+
+    _classCallCheck(this, AuthManagerKlass);
+
+    this.name = name;
+    this._hauths = {};
+    auths.forEach(function (auth) {
+      _this.addAuth(auth);
+    });
+  }
+
+  _createClass(AuthManagerKlass, [{
+    key: 'addAuth',
+    value: function addAuth(auth) {
+      this._hauths[auth.name] = auth;
+      Object.defineProperty(this, auth.name, {
+        get: function get() {
+          return auth;
+        }
+      });
+    }
+  }, {
+    key: 'getNode',
+    value: function getNode(path) {}
+  }, {
+    key: 'addRoute',
+    value: function addRoute(route) {
+      this.addAuth(route);
+    }
+  }, {
+    key: 'addRouteManager',
+    value: function addRouteManager(route) {
+      var path = route.treeName;
+      //const node = getNode(_.compact(path.split('/'))) ........
+    }
+  }, {
+    key: 'isAuthorized',
+    value: function isAuthorized(authOrRouteName) {
+      var auth = this.auths[authOrRouteName];
+      if (!auth) return true;
+      if (!auth.isAuthRequired()) return true;
+      if (!loginStore.isLoggedIn()) return false;
+      var roles = loginStore.getRoles();
+
+      return hasRoles(roles, 'admin') || hasRoles(roles, auth.roles);
+      //return hasRoles(roles, auth.roles);
+    }
+  }, {
+    key: Symbol.iterator,
+    value: function value() {
+      return this.auths;
+    }
+  }, {
+    key: 'auths',
+    get: function get() {
+      return _lodash2.default.values(this._hauths);
+    }
+  }]);
+
+  return AuthManagerKlass;
+})();
+
+function hasRoles(roles, requiredRoles) {
+  return _lodash2.default.intersection(_lodash2.default.flatten([roles]), _lodash2.default.flatten([requiredRoles])).length;
+}
