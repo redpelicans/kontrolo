@@ -6,7 +6,6 @@ Authorization and route manager helper
 
 
 ```
-  $ npm install -g babel-cli
   $ npm install
   $ npm run build
   $ npm test
