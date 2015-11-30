@@ -91,6 +91,8 @@ describe('route', function(){
     should(routes.person.list.component).equal('PersonListApp');
     should(routes.person.list.treeName).equal('person.list');
     should(auths.person.isAuthorized('promote')).equal(false);
+    should(auths.isAuthorized(routes.person.promote)).equal(false);
+    should(auths.person.isAuthorized(routes.person.promote)).equal(false);
   });
 
   it('should get company', () => {

@@ -76,14 +76,22 @@ class AuthManagerKlass{
     return !this._aparent;
   }
 
+  get root(){
+    if(this.isRoot()) return this;
+    return this._aparent.root;
+  }
+
   get loginStore(){
     if(this._loginStore) return this._loginStore;
     if(this.isRoot()) throw new Error("Cannot find any loginStore associated to authManager");
     return this._aparent._loginStore;
   }
 
-  isAuthorized(authOrRouteName){
-    const auth = this.getNode(authOrRouteName);
+  isAuthorized(authOrRoute){
+    let auth;
+    if(_.isString(authOrRoute)) auth = this.getNode(authOrRoute);
+    else auth = this.root.getNode(authOrRoute.treeName);
+
     if(!auth) return true;
     if(!auth.isAuthRequired()) return true;
     if(!this.loginStore.isLoggedIn()) return false;
