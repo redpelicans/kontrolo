@@ -11,27 +11,34 @@ export function RouteManager(routes, options){
 
 class Node{
   isRoot(){
-    return !this._parent;
+    return !this._rparent;
   }
 
   get treeName(){
-    if(this.isRoot()) return '';
-    return this._parent.treeName + '/' + this.name;
+    function tn(node){
+      if(node.isRoot()) return '';
+      return tn(node._rparent) + '.' + node.name;
+    }
+    return tn(this).slice(1);
   }
 }
 
 class RouteKlass extends Node{
   constructor(attrs={}){
     super();
-    _.extend(this, _.pick(attrs, 'name', 'path', 'topic', 'defaultRoute', 'label', 'component', 'isMenu', 'iconName', 'authRequired', 'authRoles'));
+    _.extend(this, _.pick(attrs, 'name', 'path', 'topic', 'defaultRoute', 'label', 'component', 'isMenu', 'iconName', 'authRequired', 'authRoles', 'authMethod'));
   }
 
   isAuthRequired(){
-    return this.authRequired || this.authRoles && this.authRoles.length;
+    return this.authRequired || this.authRoles && this.authRoles.length || this.authMethod;
   }
 
   get roles(){
     return this.authRoles || [];
+  }
+
+  get method(){
+    return this.authMethod;
   }
 
   registerToAuthManager(auth){
@@ -40,15 +47,13 @@ class RouteKlass extends Node{
 }
 
 class RouteManagerKlass extends Node{
-  constructor(routes=[], {name, auth}){
+  constructor(routes=[], {name, auth}={}){
     super();
     if(auth) this.auth = auth;
     if(name) this.name = name;
     this._hroutes = {};
-    routes.forEach(route => {
-      this.addRoute(route);
-      if(this.auth) route.registerToAuthManager(this.auth);
-    });
+    routes.forEach(route => this.addRoute(route) );
+    if(this.auth) this.registerToAuthManager(this.auth);
   }
 
   registerToAuthManager(auth){
@@ -57,7 +62,7 @@ class RouteManagerKlass extends Node{
   }
 
   addRoute(route){
-    route._parent = this;
+    route._rparent = this;
     this._hroutes[route.name] = route;
     Object.defineProperty(this, route.name, {
       get: function(){ return route },

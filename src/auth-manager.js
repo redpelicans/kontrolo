@@ -22,46 +22,73 @@ class AuthKlass{
 }
 
 class AuthManagerKlass{
-  constructor(auths=[], name){
-    this.name = name;
+  constructor(auths=[], {name, loginStore}={}){
+    if(name) this.name = name;
+    if(loginStore) this._loginStore = loginStore;
     this._hauths = {};
-    auths.forEach(auth => {
-      this.addAuth(auth);
-    });
+    auths.forEach(auth => this.addAuth(auth) );
   }
 
   addAuth(auth){
+    auth._aparent = this;
     this._hauths[auth.name] = auth;
     Object.defineProperty(this, auth.name, {
       get: function(){ return auth },
     });
   }
 
-  getNode(path){
+  getNode(path=""){
+    if(!path) return this;
+    const nodes = _.compact(path.split('.'));
+    const node = this._hauths[nodes[0]];
+    if(!node) return;
+    if(nodes.length === 1) return node;
+    return node.getNode(nodes.splice(1).join('.'));
+  }
+
+  getParentNode(path=""){
+    const nodes = _.compact(path.split('.'));
+    const name = nodes.pop();
+    return [this.getNode(nodes.join('.')), name];
   }
 
   addRoute(route){
-    this.addAuth(route);
+    const path = route.treeName;
+    const [parent, name] = this.getParentNode(path);
+    if(!parent) throw new Error("Cannot add route: " + path);
+    parent.addAuth(route);
   }
 
   addRouteManager(route){
     const path = route.treeName;
-    //const node = getNode(_.compact(path.split('/'))) ........
+    const node = this.getNode(path);
+    if(!node && path){
+      const [parent, name] = this.getParentNode(path);
+      parent.addAuth(new AuthManagerKlass([], {name}));
+    }
   }
 
   get auths(){
     return _.values(this._hauths);
   }
 
+  isRoot(){
+    return !this._aparent;
+  }
+
+  get loginStore(){
+    if(this._loginStore) return this._loginStore;
+    if(this.isRoot()) throw new Error("Cannot find any loginStore associated to authManager");
+    return this._aparent._loginStore;
+  }
+
   isAuthorized(authOrRouteName){
-    const auth = this.auths[authOrRouteName];
+    const auth = this.getNode(authOrRouteName);
     if(!auth) return true;
     if(!auth.isAuthRequired()) return true;
-    if(!loginStore.isLoggedIn()) return false;
-    const roles = loginStore.getRoles();
-
-    return hasRoles(roles, 'admin') || hasRoles(roles, auth.roles);
-    //return hasRoles(roles, auth.roles);
+    if(!this.loginStore.isLoggedIn()) return false;
+    const roles = this.loginStore.getRoles();
+    return chechAuthRoles(auth, roles) && chechAuthMethod(auth, this.loginStore.getUser());
   }
 
   [Symbol.iterator](){
@@ -69,8 +96,18 @@ class AuthManagerKlass{
   }
 }
 
+function chechAuthMethod(auth, user){
+  if(!auth.method) return true;
+  return auth.method(user);
+}
+
+function chechAuthRoles(auth, roles){
+  if(!auth.roles || !auth.roles.length) return true;
+  return hasRoles(roles, 'admin') || hasRoles(roles, auth.roles);
+}
+
 function hasRoles(roles, requiredRoles){
-  return _.intersection(_.flatten([roles]), _.flatten([requiredRoles])).length;
+  return !!_.intersection(_.flatten([roles]), _.flatten([requiredRoles])).length;
 }
 
 

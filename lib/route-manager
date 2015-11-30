@@ -44,13 +44,16 @@ var Node = (function () {
   _createClass(Node, [{
     key: 'isRoot',
     value: function isRoot() {
-      return !this._parent;
+      return !this._rparent;
     }
   }, {
     key: 'treeName',
     get: function get() {
-      if (this.isRoot()) return '';
-      return this._parent.treeName + '/' + this.name;
+      function tn(node) {
+        if (node.isRoot()) return '';
+        return tn(node._rparent) + '.' + node.name;
+      }
+      return tn(this).slice(1);
     }
   }]);
 
@@ -67,14 +70,14 @@ var RouteKlass = (function (_Node) {
 
     var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(RouteKlass).call(this));
 
-    _lodash2.default.extend(_this, _lodash2.default.pick(attrs, 'name', 'path', 'topic', 'defaultRoute', 'label', 'component', 'isMenu', 'iconName', 'authRequired', 'authRoles'));
+    _lodash2.default.extend(_this, _lodash2.default.pick(attrs, 'name', 'path', 'topic', 'defaultRoute', 'label', 'component', 'isMenu', 'iconName', 'authRequired', 'authRoles', 'authMethod'));
     return _this;
   }
 
   _createClass(RouteKlass, [{
     key: 'isAuthRequired',
     value: function isAuthRequired() {
-      return this.authRequired || this.authRoles && this.authRoles.length;
+      return this.authRequired || this.authRoles && this.authRoles.length || this.authMethod;
     }
   }, {
     key: 'registerToAuthManager',
@@ -86,6 +89,11 @@ var RouteKlass = (function (_Node) {
     get: function get() {
       return this.authRoles || [];
     }
+  }, {
+    key: 'method',
+    get: function get() {
+      return this.authMethod;
+    }
   }]);
 
   return RouteKlass;
@@ -96,7 +104,9 @@ var RouteManagerKlass = (function (_Node2) {
 
   function RouteManagerKlass() {
     var routes = arguments.length <= 0 || arguments[0] === undefined ? [] : arguments[0];
-    var _ref = arguments[1];
+
+    var _ref = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+
     var name = _ref.name;
     var auth = _ref.auth;
 
@@ -108,9 +118,9 @@ var RouteManagerKlass = (function (_Node2) {
     if (name) _this2.name = name;
     _this2._hroutes = {};
     routes.forEach(function (route) {
-      _this2.addRoute(route);
-      if (_this2.auth) route.registerToAuthManager(_this2.auth);
+      return _this2.addRoute(route);
     });
+    if (_this2.auth) _this2.registerToAuthManager(_this2.auth);
     return _this2;
   }
 
@@ -125,7 +135,7 @@ var RouteManagerKlass = (function (_Node2) {
   }, {
     key: 'addRoute',
     value: function addRoute(route) {
-      route._parent = this;
+      route._rparent = this;
       this._hroutes[route.name] = route;
       Object.defineProperty(this, route.name, {
         get: function get() {
