@@ -100,9 +100,10 @@ We can see Kontrolo in action within timetrack:
 function onEnter(route, nextState, replaceState){
   if(route.isAuthRequired() && !loginStore.isLoggedIn()) return replaceState({nextRouteName: this.name}, auths.login.path);   if(!auths.isAuthorized(route)) return replaceState(null, auths.unauthorized.path); 
 }
-* in the react boot file, to transform Kontrolo routes in react-router routes
 
 ```
+* in the react boot file, to transform Kontrolo routes in react-router routes
+
 
 ## Install
 
