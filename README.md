@@ -81,7 +81,7 @@ const routes = RouteManager([
 
 ```
 
-Now inside our react components, we can check if action or route is authorized like this :
+Now inside our react components, we can check if an action or a route is authorized:
 
 
 ```
@@ -92,6 +92,17 @@ if(auths.person.isAuthorized('edit')) ....
 if(auths.isAuthorized('person.edit')) ....
 ```
 
+We can see Kontrolo in action within timetrack:
+
+* within React components, like code above
+* in `onEnter` callbacks of `react-router` with a code like this:
+```
+function onEnter(route, nextState, replaceState){
+  if(route.isAuthRequired() && !loginStore.isLoggedIn()) return replaceState({nextRouteName: this.name}, auths.login.path);   if(!auths.isAuthorized(route)) return replaceState(null, auths.unauthorized.path); 
+}
+* in the react boot file, to transform Kontrolo routes in react-router routes
+
+```
 
 ## Install
 
