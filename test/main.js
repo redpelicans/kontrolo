@@ -7,7 +7,7 @@ const user = { name: 'toto', age: 13, roles: ['role1']};
 const loginStore = {
   getUser(){ return user },
   isLoggedIn(){ return !!this.getUser() },
-  getRoles(){ return user.roles },
+  getUserRoles(){ return user.roles },
 }
 
 const personAuthManager = AuthManager([

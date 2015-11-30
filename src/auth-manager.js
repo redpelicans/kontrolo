@@ -87,7 +87,7 @@ class AuthManagerKlass{
     if(!auth) return true;
     if(!auth.isAuthRequired()) return true;
     if(!this.loginStore.isLoggedIn()) return false;
-    const roles = this.loginStore.getRoles();
+    const roles = this.loginStore.getUserRoles();
     return chechAuthRoles(auth, roles) && chechAuthMethod(auth, this.loginStore.getUser());
   }
 

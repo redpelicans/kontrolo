@@ -154,7 +154,7 @@ var AuthManagerKlass = (function () {
       if (!auth) return true;
       if (!auth.isAuthRequired()) return true;
       if (!this.loginStore.isLoggedIn()) return false;
-      var roles = this.loginStore.getRoles();
+      var roles = this.loginStore.getUserRoles();
       return chechAuthRoles(auth, roles) && chechAuthMethod(auth, this.loginStore.getUser());
     }
   }, {
