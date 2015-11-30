@@ -14,7 +14,7 @@ class Node{
     return !this._rparent;
   }
 
-  get treeName(){
+  get fullName(){
     function tn(node){
       if(node.isRoot()) return '';
       return tn(node._rparent) + '.' + node.name;
@@ -58,7 +58,7 @@ class RouteManagerKlass extends Node{
 
   registerToAuthManager(auth){
     auth.addRouteManager(this);
-    this.routes.forEach(route => route.registerToAuthManager(auth));
+    _.each(this._hroutes, route => route.registerToAuthManager(auth));
   }
 
   addRoute(route){
@@ -69,8 +69,32 @@ class RouteManagerKlass extends Node{
     });
   }
 
+  get root(){
+    if(this.isRoot()) return this;
+    return this._rparent.root;
+  }
+
+  getNode(path=""){
+    if(!path) return this;
+    const nodes = _.compact(path.split('.'));
+    const node = this._hroutes[nodes[0]];
+    if(!node) return;
+    if(nodes.length === 1) return node;
+    return node.getNode(nodes.splice(1).join('.'));
+  }
+
+
+  getRoute(fullName){
+    return this.root.getNode(fullName);
+  }
+
   get routes(){
-    return _.values(this._hroutes);
+    const res = [];
+    _.each(this._hroutes, r => {
+      if( r instanceof RouteManagerKlass) res.push(r.routes);
+      else res.push(r);
+    });
+    return _.flatten(res);
   }
 
   get defaultRoute(){

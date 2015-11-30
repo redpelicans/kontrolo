@@ -30,6 +30,7 @@ class AuthManagerKlass{
   }
 
   addAuth(auth){
+    if(!auth.name) throw new Error('Cannot register an auth or route without a name!');
     auth._aparent = this;
     this._hauths[auth.name] = auth;
     Object.defineProperty(this, auth.name, {
@@ -53,14 +54,14 @@ class AuthManagerKlass{
   }
 
   addRoute(route){
-    const path = route.treeName;
+    const path = route.fullName;
     const [parent, name] = this.getParentNode(path);
     if(!parent) throw new Error("Cannot add route: " + path);
     parent.addAuth(route);
   }
 
   addRouteManager(route){
-    const path = route.treeName;
+    const path = route.fullName;
     const node = this.getNode(path);
     if(!node && path){
       const [parent, name] = this.getParentNode(path);
@@ -87,16 +88,16 @@ class AuthManagerKlass{
     return this._aparent._loginStore;
   }
 
-  isAuthorized(authOrRoute){
+  isAuthorized(authOrRoute, context){
     let auth;
     if(_.isString(authOrRoute)) auth = this.getNode(authOrRoute);
-    else auth = this.root.getNode(authOrRoute.treeName);
+    else auth = this.root.getNode(authOrRoute.fullName);
 
     if(!auth) return true;
     if(!auth.isAuthRequired()) return true;
     if(!this.loginStore.isLoggedIn()) return false;
     const roles = this.loginStore.getUserRoles();
-    return chechAuthRoles(auth, roles) && chechAuthMethod(auth, this.loginStore.getUser());
+    return chechAuthRoles(auth, roles) && chechAuthMethod(auth, this.loginStore.getUser(), context);
   }
 
   [Symbol.iterator](){
@@ -104,9 +105,9 @@ class AuthManagerKlass{
   }
 }
 
-function chechAuthMethod(auth, user){
+function chechAuthMethod(auth, user, context){
   if(!auth.method) return true;
-  return auth.method(user);
+  return auth.method(user, context);
 }
 
 function chechAuthRoles(auth, roles){

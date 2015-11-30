@@ -82,14 +82,18 @@ describe('route', function(){
     should(routes.notfound.path).equal('/notfound');
     should(routes.notfound.name).equal('notfound');
     should(routes.notfound.component).equal('NotFound');
-    should(routes.notfound.treeName).equal('notfound');
+    should(routes.notfound.fullName).equal('notfound');
   });
 
   it('should get person', () => {
     should(routes.person.list.path).equal('/people');
+
+    should(routes.getRoute(routes.person.list.fullName).path).equal('/people');
+    should(routes.person.getRoute(routes.person.list.fullName).path).equal('/people');
+
     should(routes.person.list.name).equal('list');
     should(routes.person.list.component).equal('PersonListApp');
-    should(routes.person.list.treeName).equal('person.list');
+    should(routes.person.list.fullName).equal('person.list');
     should(auths.person.isAuthorized('promote')).equal(false);
     should(auths.isAuthorized(routes.person.promote)).equal(false);
     should(auths.person.isAuthorized(routes.person.promote)).equal(false);
@@ -97,7 +101,7 @@ describe('route', function(){
 
   it('should get company', () => {
     should(routes.company.list.path).equal('/companies');
-    should(routes.company.treeName).equal('company');
+    should(routes.company.fullName).equal('company');
     should(auths.company.isAuthorized('list')).equal(false);
     should(auths.isAuthorized('company.list')).equal(false);
   });
