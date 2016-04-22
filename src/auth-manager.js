@@ -69,6 +69,11 @@ class AuthManagerKlass{
     }
   }
 
+  registerRouteManager(routeManager){
+    routeManager.registerToAuthManager(this)
+    return this
+  }
+
   get auths(){
     return _.values(this._hauths);
   }
