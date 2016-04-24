@@ -3,11 +3,14 @@ import should from 'should';
 import _ from 'lodash';
 
 const user = { name: 'toto', age: 13, roles: ['role1']};
+const state = { message: 'coucou'}
 
-const loginStore = {
-  getUser(){ return user },
-  isLoggedIn(){ return !!this.getUser() },
-  getUserRoles(){ return user.roles },
+const loginSelector = () => {
+  return {
+    getUser(){ return user },
+    isLoggedIn(){ return !!this.getUser() },
+    getUserRoles(){ return user.roles },
+  }
 }
 
 const personAuthManager = AuthManager([
@@ -18,14 +21,16 @@ const personAuthManager = AuthManager([
   Auth({
     name: 'edit',
     roles: ['role2'],
-    method: function(user){return user.age > 18},
+    method: (user, getState) => user.age > 18 && getState().message === 'coucou' ,
   }),
+  Auth({
+    name: 'context',
+    roles: ['role2'],
+    method: (user, getState, {data}) => user.age > 18 && getState().message === 'coucou' && data === 1,
+  }),
+
 ], {name: 'person'});
 
-
-const auths = AuthManager([
-  personAuthManager,
-], {loginStore: loginStore});
 
 
 const companyRoutes = RouteManager([
@@ -73,7 +78,16 @@ const routes = RouteManager([
     path: '/notfound',
     component: 'NotFound',
   }),
-], {auth: auths});
+]);
+
+const auths = AuthManager([
+  personAuthManager,
+], {
+  loginSelector, 
+  getState: () => state,
+  routes
+});
+
 
 
 describe('route', function(){
@@ -132,6 +146,8 @@ describe('auth', function(){
     should(auths.person.isAuthorized('edit')).equal(false);
     user.age = 19;
     should(auths.person.isAuthorized('edit')).equal(true);
+    user.age = 19;
+    should(auths.person.isAuthorized('context', {data: 1})).equal(true);
     user.roles = ['role2', 'role3'];
     should(auths.person.isAuthorized('promote')).equal(true);
     user.age = 9;

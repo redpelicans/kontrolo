@@ -15,11 +15,14 @@ Kontrolo needs a flux store that can anwer to `getUser()`, `isLoggedIn()` and `g
 let's simulate our store:
 
 ```
+const store = {data: 'coucou'} // may be a redux store
 const user = { name: 'toto', age: 13, roles: ['admin']};
-const loginStore = {
-  getUser(){ return user },
-  isLoggedIn(){ return !!this.getUser() },
-  getUserRoles(){ return user.roles },
+const loginSelector = () => {
+  return {
+    getUser(){ return user },
+    isLoggedIn(){ return !!this.getUser() },
+    getUserRoles(){ return user.roles },
+  }
 }
 ```
 
@@ -32,13 +35,10 @@ const personAuthManager = AuthManager([
   Auth({
     name: 'delete',
     roles: ['admin'],
-    method: function(user){return user.age > 18},
+    method: (user, getState, context) => return user.age > 18 && getState().data === 'coucou',
   }),
 ], {name: 'person'});
 
-const auths = AuthManager([
-  personAuthManager,
-], {loginStore: loginStore});
 
 ```
 
@@ -77,7 +77,20 @@ const routes = RouteManager([
     path: '/notfound',
     component: 'NotFound',
   }),
-], {auth: auths});
+]);
+
+```
+ 
+Put together routes and auths:
+
+```
+const auths = AuthManager([
+  personAuthManager,
+], {
+  loginSelector,
+  routes,
+  getState: () => store
+});
 
 ```
 

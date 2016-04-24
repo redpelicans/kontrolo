@@ -4,8 +4,8 @@ export function Auth(...elt){
   return new AuthKlass(...elt);
 }
 
-export function AuthManager(auths, name){
-  return new AuthManagerKlass(auths, name);
+export function AuthManager(auths, options){
+  return new AuthManagerKlass(auths, options);
 }
 
 class AuthKlass{
@@ -22,11 +22,13 @@ class AuthKlass{
 }
 
 class AuthManagerKlass{
-  constructor(auths=[], {name, loginStore}={}){
+  constructor(auths=[], {name, loginSelector, getState, routes}={}){
     if(name) this.name = name;
-    if(loginStore) this._loginStore = loginStore;
+    if(loginSelector) this._loginSelector = loginSelector;
+    if(getState) this._getState = getState;
     this._hauths = {};
     auths.forEach(auth => this.addAuth(auth) );
+    if(routes) this.registerRouteManager(routes)
   }
 
   addAuth(auth){
@@ -87,10 +89,16 @@ class AuthManagerKlass{
     return this._aparent.root;
   }
 
-  get loginStore(){
-    if(this._loginStore) return this._loginStore;
-    if(this.isRoot()) throw new Error("Cannot find any loginStore associated to authManager");
-    return this._aparent._loginStore;
+  get loginSelector(){
+    if(this._loginSelector) return this._loginSelector();
+    if(this.isRoot()) throw new Error("Cannot find any loginSelector associated to authManager");
+    return this._aparent.loginSelector;
+  }
+
+  getStateSelector(){
+    if(this._getState) return this._getState;
+    if(this.isRoot()) throw new Error("Cannot find any state associated to authManager");
+    return this._aparent.getStateSelector();
   }
 
   isAuthorized(authOrRoute, context){
@@ -100,9 +108,10 @@ class AuthManagerKlass{
 
     if(!auth) return true;
     if(!auth.isAuthRequired()) return true;
-    if(!this.loginStore.isLoggedIn()) return false;
-    const roles = this.loginStore.getUserRoles();
-    return chechAuthRoles(auth, roles) && chechAuthMethod(auth, this.loginStore.getUser(), context);
+    const loginStore = this.loginSelector
+    if(!loginStore.isLoggedIn()) return false;
+    const roles = loginStore.getUserRoles();
+    return chechAuthRoles(auth, roles) && chechAuthMethod(auth, loginStore.getUser(), this.getStateSelector(), context);
   }
 
   [Symbol.iterator](){
@@ -110,9 +119,9 @@ class AuthManagerKlass{
   }
 }
 
-function chechAuthMethod(auth, user, context){
+function chechAuthMethod(auth, user, getState, context){
   if(!auth.method) return true;
-  return auth.method(user, context);
+  return auth.method(user, getState, context);
 }
 
 function chechAuthRoles(auth, roles){
